@@ -1,0 +1,4 @@
+package*
+sentiments.db
+.venv
+node_modules
