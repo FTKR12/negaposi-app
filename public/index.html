@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>ネガポジ判定アプリ (Node版)</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 16px;
+        background: #f7fafc;
+      }
+      h1 {
+        text-align: center;
+      }
+      .card {
+        background: #ffffff;
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+      textarea {
+        width: 100%;
+        height: 120px;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e0;
+        resize: vertical;
+        font-size: 14px;
+      }
+      button {
+        padding: 10px 20px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        margin-top: 12px;
+      }
+      button#submit-btn {
+        background: #3182ce;
+        color: #fff;
+      }
+      button#submit-btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      #result {
+        margin-top: 16px;
+        font-size: 16px;
+      }
+      .label-positive {
+        color: #2f855a;
+        font-weight: bold;
+      }
+      .label-negative {
+        color: #e53e3e;
+        font-weight: bold;
+      }
+      .meta {
+        font-size: 12px;
+        color: #718096;
+        margin-top: 4px;
+      }
+      .error {
+        color: #e53e3e;
+        margin-top: 8px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ネガポジ判定アプリ (Node.js)</h1>
+    <div class="card">
+      <p>
+        テキストを入力して「判定する」を押すと、<b>ポジティブ / ネガティブ</b> を判定します。<br />
+        同じテキストは DB に保存され、2回目以降は AI を呼ばずに DB から結果を返します。
+      </p>
+
+      <form id="form">
+        <label for="text">テキスト:</label><br />
+        <textarea
+          id="text"
+          name="text"
+          placeholder="今日はとても楽しかった！"
+        ></textarea
+        ><br />
+        <button id="submit-btn" type="submit">判定する</button>
+      </form>
+
+      <div id="result"></div>
+      <div id="error" class="error"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById("form");
+      const textArea = document.getElementById("text");
+      const resultDiv = document.getElementById("result");
+      const errorDiv = document.getElementById("error");
+      const submitBtn = document.getElementById("submit-btn");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorDiv.textContent = "";
+        resultDiv.textContent = "";
+
+        const text = textArea.value.trim();
+        if (!text) {
+          errorDiv.textContent = "テキストを入力してください。";
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "判定中...";
+
+        try {
+          const res = await fetch("/predict", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ text }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            errorDiv.textContent =
+              data.error || "エラーが発生しました。コンソールを確認してください。";
+          } else {
+            const label = data.label;
+            const fromCache = data.fromCache;
+
+            const labelClass =
+              label === "positive" ? "label-positive" : "label-negative";
+            const labelJa = label === "positive" ? "ポジティブ" : "ネガティブ";
+
+            resultDiv.innerHTML = `
+              <div>判定結果: <span class="${labelClass}">${labelJa}</span></div>
+              <div class="meta">
+                ソース: ${fromCache ? "DB（キャッシュ）" : "AIモデル (HuggingFace)"}
+              </div>
+            `;
+          }
+        } catch (err) {
+          console.error(err);
+          errorDiv.textContent = "通信エラーが発生しました。";
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "判定する";
+        }
+      });
+    </script>
+  </body>
+</html>
