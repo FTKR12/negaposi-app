@@ -6,8 +6,7 @@ app = Flask(__name__)
 # 日本語感情分析モデル（ローカル）
 sentiment_model = pipeline(
     "sentiment-analysis",
-    model="jarvisx17/japanese-sentiment-analysis", 
-    cache_dir="./models"
+    model="jarvisx17/japanese-sentiment-analysis"
 )
 
 @app.route("/predict", methods=["POST"])

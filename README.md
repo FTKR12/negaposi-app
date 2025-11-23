@@ -14,7 +14,7 @@ npm install express better-sqlite3 dotenv cors
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
-pip install flask transformers sentencepiece torch
+pip install flask transformers sentencepiece torch fugashi unidic_lite
 ```
 
 # deploy
