@@ -17,7 +17,7 @@ source .venv/bin/activate
 pip install flask transformers sentencepiece torch fugashi unidic_lite
 ```
 
-# deploy
+# Run
 ```sh
 python sentiment_server.py
 node server.js
