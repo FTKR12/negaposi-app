@@ -1,4 +1,4 @@
-package*
+node_modules/
+.venv/
 sentiments.db
-.venv
-node_modules
+package-lock.json
