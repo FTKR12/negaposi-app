@@ -22,6 +22,3 @@ pip install flask transformers sentencepiece torch fugashi unidic_lite
 python sentiment_server.py
 node server.js
 ```
-
-python3 -m venv .venv
-source .venv/bin/activate
