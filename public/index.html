@@ -4,32 +4,53 @@
     <meta charset="utf-8" />
     <title>ネガポジ判定アプリ (Node版)</title>
     <style>
+      :root {
+        --bg: #f7fafc;
+        --card-bg: #ffffff;
+        --border: #cbd5e0;
+        --text-muted: #718096;
+        --primary: #3182ce;
+        --positive: #2f855a;
+        --negative: #e53e3e;
+        --shadow-soft: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
           sans-serif;
         max-width: 800px;
         margin: 40px auto;
         padding: 0 16px;
-        background: #f7fafc;
+        background: var(--bg);
       }
+
       h1 {
         text-align: center;
+        margin-bottom: 24px;
       }
+
       .card {
-        background: #ffffff;
+        background: var(--card-bg);
         padding: 24px;
         border-radius: 16px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        box-shadow: var(--shadow-soft);
       }
+
       textarea {
         width: 100%;
         height: 120px;
         padding: 8px;
         border-radius: 8px;
-        border: 1px solid #cbd5e0;
+        border: 1px solid var(--border);
         resize: vertical;
         font-size: 14px;
+        font-family: inherit;
       }
+
       button {
         padding: 10px 20px;
         border-radius: 999px;
@@ -37,34 +58,42 @@
         cursor: pointer;
         font-size: 14px;
         margin-top: 12px;
+        font-family: inherit;
       }
+
       button#submit-btn {
-        background: #3182ce;
+        background: var(--primary);
         color: #fff;
       }
+
       button#submit-btn:disabled {
         opacity: 0.6;
         cursor: default;
       }
+
       #result {
         margin-top: 16px;
         font-size: 16px;
       }
+
       .label-positive {
-        color: #2f855a;
+        color: var(--positive);
         font-weight: bold;
       }
+
       .label-negative {
-        color: #e53e3e;
+        color: var(--negative);
         font-weight: bold;
       }
+
       .meta {
         font-size: 12px;
-        color: #718096;
+        color: var(--text-muted);
         margin-top: 4px;
       }
+
       .error {
-        color: #e53e3e;
+        color: var(--negative);
         margin-top: 8px;
         font-size: 14px;
       }
@@ -84,8 +113,8 @@
           id="text"
           name="text"
           placeholder="今日はとても楽しかった！"
-        ></textarea
-        ><br />
+        ></textarea>
+        <br />
         <button id="submit-btn" type="submit">判定する</button>
       </form>
 
@@ -94,28 +123,60 @@
     </div>
 
     <script>
+      const API_ENDPOINT = "/predict";
+
       const form = document.getElementById("form");
       const textArea = document.getElementById("text");
       const resultDiv = document.getElementById("result");
       const errorDiv = document.getElementById("error");
       const submitBtn = document.getElementById("submit-btn");
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+      const setLoadingState = (isLoading) => {
+        submitBtn.disabled = isLoading;
+        submitBtn.textContent = isLoading ? "判定中..." : "判定する";
+      };
+
+      const resetMessages = () => {
         errorDiv.textContent = "";
         resultDiv.textContent = "";
+      };
+
+      const renderResult = (label, fromCache) => {
+        const isPositive = label === "positive";
+        const labelClass = isPositive ? "label-positive" : "label-negative";
+        const labelJa = isPositive ? "ポジティブ" : "ネガティブ";
+        const sourceText = fromCache ? "DB（キャッシュ）" : "AIモデル";
+
+        resultDiv.innerHTML = `
+          <div>
+            判定結果:
+            <span class="${labelClass}">${labelJa}</span>
+          </div>
+          <div class="meta">
+            ソース: ${sourceText}
+          </div>
+        `;
+      };
+
+      const renderError = (message) => {
+        errorDiv.textContent =
+          message || "エラーが発生しました。コンソールを確認してください。";
+      };
+
+      const handleSubmit = async (event) => {
+        event.preventDefault();
+        resetMessages();
 
         const text = textArea.value.trim();
         if (!text) {
-          errorDiv.textContent = "テキストを入力してください。";
+          renderError("テキストを入力してください。");
           return;
         }
 
-        submitBtn.disabled = true;
-        submitBtn.textContent = "判定中...";
+        setLoadingState(true);
 
         try {
-          const res = await fetch("/predict", {
+          const response = await fetch(API_ENDPOINT, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -123,34 +184,23 @@
             body: JSON.stringify({ text }),
           });
 
-          const data = await res.json();
+          const data = await response.json().catch(() => null);
 
-          if (!res.ok) {
-            errorDiv.textContent =
-              data.error || "エラーが発生しました。コンソールを確認してください。";
-          } else {
-            const label = data.label;
-            const fromCache = data.fromCache;
-
-            const labelClass =
-              label === "positive" ? "label-positive" : "label-negative";
-            const labelJa = label === "positive" ? "ポジティブ" : "ネガティブ";
-
-            resultDiv.innerHTML = `
-              <div>判定結果: <span class="${labelClass}">${labelJa}</span></div>
-              <div class="meta">
-                ソース: ${fromCache ? "DB（キャッシュ）" : "AIモデル (HuggingFace)"}
-              </div>
-            `;
+          if (!response.ok || !data) {
+            renderError(data?.error);
+            return;
           }
-        } catch (err) {
-          console.error(err);
-          errorDiv.textContent = "通信エラーが発生しました。";
+
+          renderResult(data.label, data.fromCache);
+        } catch (error) {
+          console.error(error);
+          renderError("通信エラーが発生しました。");
         } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = "判定する";
+          setLoadingState(false);
         }
-      });
+      };
+
+      form.addEventListener("submit", handleSubmit);
     </script>
   </body>
 </html>
