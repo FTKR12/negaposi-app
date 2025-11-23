@@ -13,7 +13,7 @@
 - バックエンドAPIサーバ（Node.js）
     - 感情分析API連携（PythonサーバへのHTTPリクエスト）
     - DBキャッシュ：SQLiteを使用（DBファイル: `sentiments.db`）
-    
+
 ※ 詳細は[設計書](./BASIC_DESIGN.md)を参照。
 
 ## Environments
@@ -37,7 +37,7 @@ export HF_HUB_CACHE=./models
 ```
 
 ## Run
-別ターミナルで下記を実行。
+別々のターミナルで下記を実行。
 ```sh
 python sentiment_server.py
 node server.js
