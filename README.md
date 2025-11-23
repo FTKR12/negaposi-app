@@ -13,6 +13,7 @@
 - バックエンドAPIサーバ（Node.js）
     - 感情分析API連携（PythonサーバへのHTTPリクエスト）
     - DBキャッシュ：SQLiteを使用（DBファイル: `sentiments.db`）
+※ 詳細は[設計書](./BASIC_DESIGN.md)を参照。
 
 ## Environments
 - Node.js
