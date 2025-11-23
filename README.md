@@ -10,7 +10,7 @@
         - 使用モデル：`jarvisx17/japanese-sentiment-analysis`
 - バックエンドAPIサーバ（Node.js）
     - 感情分析API連携（PythonサーバへのHTTPリクエスト）
-    - DBキャッシュ：SQLiteを使用（表領域: sentiments.db）
+    - DBキャッシュ：SQLiteを使用（DBファイル: `sentiments.db`）
 
 ## Environments
 - Node.js
